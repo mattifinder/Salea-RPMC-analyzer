@@ -1,0 +1,13 @@
+{
+  "name": "RPMC parser",
+  "apiVersion": "1.0.0",
+  "author": "Matti Finder",
+  "version": "0.0.1",
+  "description": "Parser to read rpmc commands as defined in JESD260",
+  "extensions": {
+    "RPMC parser": {
+      "type": "HighLevelAnalyzer",
+      "entryPoint": "HighLevelAnalyzer.Hla"
+    }
+  }
+}
