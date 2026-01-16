@@ -1,13 +1,10 @@
 
-  # RPMC parser
-  
-## Getting started
+# RPMC parser
 
-1. Build your extension by updating the Python files for your needs
-2. Create a public Github repo and push your code 
-3. Update this README
-4. Open the Logic app and publish your extension
-5. Create a Github release
-6. Debug your hardware like you've never done before :)
+This high level analyzer parses the supplementary RPMC SPI commands, defined in JESD260. 
 
+## Usage
+
+Set the op1 and op2 opcode as defined in the datasheet of your SPI flash chip.
+The standard recommends 0x9b (155) for op1 and 0x96 (150) for op2, when in doubt try these first.
   

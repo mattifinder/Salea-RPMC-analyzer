@@ -18,13 +18,13 @@ class Hla(HighLevelAnalyzer):
             'format': 'increment counter {{data.target_counter}}, previous value {{data.previous_value}}'
         },
         'get': {
-            'format': 'get counter {{data.target_counter}}'
+            'format': 'get counter {{data.target_counter}}, tag 0x{{data.tag}}'
         },
         'status_short': {
             'format': 'status {{data.result_bits}}'
         },
         'status_long': {
-            'format': 'status {{data.result_bits}}, counter value {{data.counter_value}}'
+            'format': 'status {{data.result_bits}}, counter value {{data.counter_value}}, tag 0x{{data.tag}}'
         }
     }
 
@@ -32,15 +32,11 @@ class Hla(HighLevelAnalyzer):
     op2_opcode = 0x96 # NumberSetting(min_value=0, max_value=0xff)
 
     def __init__(self):
-        '''
-        Initialize HLA.
-
-        Settings can be accessed using the same name used above.
-        '''
         self.start_time = None
         self.end_time = None
         self.miso = None
         self.mosi = None
+        self.frames_read = None
 
     def _analyze(self) -> AnalyzerFrame:
         if len(self.mosi) < 3:
@@ -64,12 +60,14 @@ class Hla(HighLevelAnalyzer):
                 })
             elif self.mosi[1] == 3:
                 return AnalyzerFrame('get', self.start_time, self.end_time, {
-                    'target_counter': self.mosi[2]
+                    'target_counter': self.mosi[2],
+                    'tag': self.mosi[4:16].hex()
                 })
         elif self.mosi[0] == 0x96:
             if len(self.miso) > 3:
                 return AnalyzerFrame('status_long', self.start_time, self.end_time, {
                     'result_bits': bin(self.miso[2]),
+                    'tag': self.miso[3:15].hex(),
                     'counter_value': int.from_bytes(self.miso[15:19], byteorder='big')
                 })
             else:
@@ -79,18 +77,16 @@ class Hla(HighLevelAnalyzer):
 
 
     def decode(self, frame: AnalyzerFrame):
-        '''
-        Process a frame from the input analyzer, and optionally return a single `AnalyzerFrame` or a list of `AnalyzerFrame`s.
-
-        The type and data values in `frame` will depend on the input analyzer.
-        '''
         if frame.type == 'enable':
             self.start_time = frame.start_time
             self.miso = b''
             self.mosi = b''
+            self.frames_read = 0
         elif frame.type == 'result':
-            self.miso += frame.data['miso']
-            self.mosi += frame.data['mosi']
+            if self.frames_read < 64: # longest command is write root key with length 64
+                self.miso += frame.data['miso']
+                self.mosi += frame.data['mosi']
+            self.frames_read += 1
         elif frame.type == 'disable':
             self.end_time = frame.end_time
             return self._analyze()
